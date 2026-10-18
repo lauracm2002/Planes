@@ -32,6 +32,7 @@ svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-l
 .back{display:flex;align-items:center;gap:2px;border:0;background:none;color:var(--pink-d);font-weight:700;padding:0;margin-right:10px;max-width:110px;white-space:nowrap}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:4px 18px 12px;scrollbar-width:none;position:sticky;top:0;background:var(--bg);z-index:2}
 .chips::-webkit-scrollbar{display:none}
+.top .chips{position:static;padding:0;flex:1;min-width:0;background:none}
 .chip{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:8px 14px;font-weight:600;font-size:14px;display:flex;gap:6px;align-items:center;transition:.2s}
 .chip.on{background:var(--pink);border-color:var(--pink);color:#fff}
 .chip small{opacity:.7;font-weight:700}
@@ -256,7 +257,8 @@ const GMaps={
 /* Los enlaces cortos (maps.app.goo.gl) requieren un servicio propio que siga la redirección.
    Pon aquí su URL: debe responder JSON {url:"<url larga>"} o {place:{name,address,lat,lng,gid,url,meta}} */
 /* cartoKey: tu API key gratuita de CARTO (carto.com/basemaps/apikey) */
-const CONFIG={expandEndpoint:null,cartoKey:'cb1_4ny2_1_4ef8acba06ee58adc51dbd7e'};
+/* bigLabels: etiquetas del mapa al doble de tamaño (false = tamaño normal) */
+const CONFIG={expandEndpoint:null,cartoKey:'cb1_4ny2_1_4ef8acba06ee58adc51dbd7e',bigLabels:true};
 const Resolver={
  async resolve(raw){const m=raw.match(/https?:\/\/\S+/),text=m?m[0]:raw.trim(),r=GMaps.parse(text);
   if(r)return r;
@@ -266,7 +268,8 @@ const Resolver={
   if(!CONFIG.expandEndpoint){const e=new Error('NO_BACKEND');e.code='NO_BACKEND';throw e}
   const r=await fetch(`${CONFIG.expandEndpoint}?url=${encodeURIComponent(u)}`);if(!r.ok)throw new Error('EXPAND');return r.json()}
 };
-const MADRID=[40.4168,-3.7038],HOME_ZOOM=5.25;
+const MADRID=[40.4168,-3.7038],HOME_ZOOM=5.25,MADRID_REGION=[[39.88,-4.58],[41.17,-3.05]];
+let mapChipsX=0;
 
 const T=new Date(),Y=T.getFullYear(),M=T.getMonth();
 const repo=new PlanRepo([
@@ -280,7 +283,7 @@ const repo=new PlanRepo([
 
 /* ========== Estado (patrón Observer) ========== */
 class Store{constructor(s){this.s=s;this.subs=new Set}set(p){Object.assign(this.s,p);this.subs.forEach(f=>f(this.s))}sub(f){this.subs.add(f);return this}}
-const store=new Store({tab:'plans',sub:null,view:Prefs.get('view','list'),archive:false,cat:CATS[0].id,folder:null,month:{y:Y,m:M},dir:'',q:''});
+const store=new Store({tab:'plans',sub:null,view:Prefs.get('view','list'),archive:false,cat:CATS[0].id,folder:null,month:{y:Y,m:M},dir:'',q:'',mapCat:'all'});
 const S=store.s,setS=p=>store.set(p);
 
 /* ========== Overlays ========== */
@@ -480,10 +483,11 @@ const pinIcon=(c,off)=>L.divIcon({className:'pin'+(off?' off':''),html:`<div sty
 const MapView={
  el:h('div',{id:'map'}),map:null,layer:null,focus:null,
  init(){if(this.map)return;
-  const m=this.map=L.map(this.el,{center:MADRID,zoom:HOME_ZOOM,zoomSnap:.25,zoomControl:false,attributionControl:false});
+  const m=this.map=L.map(this.el,{center:MADRID,zoom:HOME_ZOOM,zoomSnap:.25,minZoom:3,zoomControl:false,attributionControl:false});
   const note=h('div',{class:'mapnote'},CONFIG.cartoKey?'No se cargan los mosaicos del mapa (¿sin conexión?)':'Falta la API key de CARTO (CONFIG.cartoKey)');this.el.append(note);if(!CONFIG.cartoKey)note.style.display='block';
   let bad=0;
-  L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'+(CONFIG.cartoKey?'?key='+encodeURIComponent(CONFIG.cartoKey):''),{maxZoom:20,detectRetina:true,attribution:'&copy; OpenStreetMap contributors &copy; CARTO'})
+  L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}${CONFIG.bigLabels?'@2x':''}.png`+(CONFIG.cartoKey?'?key='+encodeURIComponent(CONFIG.cartoKey):''),
+   {maxZoom:20,attribution:'&copy; OpenStreetMap contributors &copy; CARTO',...(CONFIG.bigLabels?{tileSize:512,zoomOffset:-1}:{detectRetina:true})})
    .on('tileerror',()=>{if(++bad>2)note.style.display='block'}).on('tileload',()=>{bad=0;if(CONFIG.cartoKey)note.style.display='none'}).addTo(m);
   L.control.attribution({prefix:false,position:'bottomleft'}).addTo(m);
   this.layer=L.layerGroup().addTo(m)},
@@ -493,9 +497,9 @@ const MapView={
    return}
   this.init();this.sync();
   requestAnimationFrame(()=>{this.map.invalidateSize();if(this.focus){const f=this.focus;this.focus=null;this.map.setView([f.lat,f.lng],16)}})},
- home(){this.map&&this.map.setView(MADRID,HOME_ZOOM)},
+ home(){this.map&&this.map.fitBounds(MADRID_REGION,{padding:[8,8]})},
  sync(){this.layer.clearLayers();const by=new Map();
-  repo.list().forEach(p=>{const pl=placeOf(p.placeId);if(!pl)return;if(!by.has(pl.id))by.set(pl.id,{pl,ps:[]});by.get(pl.id).ps.push(p)});
+  repo.list().forEach(p=>{if(S.mapCat!=='all'&&p.cat!==S.mapCat)return;const pl=placeOf(p.placeId);if(!pl)return;if(!by.has(pl.id))by.set(pl.id,{pl,ps:[]});by.get(pl.id).ps.push(p)});
   by.forEach(({pl,ps})=>{const pend=ps.filter(p=>!p.done);
    L.marker([pl.lat,pl.lng],{icon:pinIcon(catOf((pend[0]||ps[0]).cat),!pend.length)}).on('click',()=>openPlaceSheet(pl,ps)).addTo(this.layer)})}
 };
@@ -532,7 +536,9 @@ function renderTop(){
    h('button',{style:'border:0;background:none;font-size:22px;font-weight:800;padding:8px',onclick:openPicker},h('span',{class:'cap'},`${MES[S.month.m]} ${S.month.y}`)),
    h('button',{class:'ib',onclick:()=>goMonth(1),'aria-label':'Mes siguiente'},ic(I.next)));return}
  top.style.justifyContent='';
- if(S.tab==='map'){top.append(h('h1',{style:'margin:0;flex:1'},'Mapa'),h('button',{class:'ib',onclick:()=>MapView.home(),'aria-label':'Centrar en Madrid'},ic(I.locate)));return}
+ if(S.tab==='map'){
+  const chips=h('div',{class:'chips'},[{id:'all',n:'Todos'},...CATS].map(c=>h('button',{class:'chip'+(c.id===S.mapCat?' on':''),onclick:()=>setS({mapCat:c.id})},c.e,c.n)));
+  chips.addEventListener('scroll',()=>{mapChipsX=chips.scrollLeft});top.append(chips);chips.scrollLeft=mapChipsX;return}
  if(S.sub==='cats'){top.append(h('button',{class:'ib',onclick:()=>setS({sub:null}),'aria-label':'Volver'},ic(I.back)),h('h1',{},'Categorías'));return}
  const inFolder=S.view==='folders'&&S.folder&&!S.q.trim();
  top.append(...[inFolder&&h('button',{class:'back',onclick:()=>setS({folder:null})},ic(I.back),catOf(S.folder).n),searchEl,
@@ -547,13 +553,14 @@ function renderScreen(){
 }
 function render(){
  renderTop();renderScreen();
+ $('fab').replaceChildren(ic(S.tab==='map'?I.locate:I.plus));$('fab').setAttribute('aria-label',S.tab==='map'?'Centrar en Madrid':'Nuevo');
  $('tabs').replaceChildren(...TABS.map(([id,n,p])=>h('button',{class:'tab'+(S.tab===id?' on':''),onclick:()=>setS({tab:id,sub:null})},ic(p),n)));
 }
 /* Gesto de swipe para cambiar de mes */
 (()=>{let x=0,y=0;const sc=$('screen');
  sc.addEventListener('touchstart',e=>{x=e.touches[0].clientX;y=e.touches[0].clientY},{passive:true});
  sc.addEventListener('touchend',e=>{if(S.tab!=='cal')return;const dx=e.changedTouches[0].clientX-x,dy=e.changedTouches[0].clientY-y;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5)goMonth(dx<0?1:-1)},{passive:true});})();
-$('fab').append(ic(I.plus));$('fab').onclick=()=>S.tab==='plans'&&S.sub==='cats'?openCatForm(null):openForm(null);
+$('fab').onclick=()=>S.tab==='map'?MapView.home():S.tab==='plans'&&S.sub==='cats'?openCatForm(null):openForm(null);
 store.sub(render);render();
 </script>
 </body></html>
