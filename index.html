@@ -255,7 +255,7 @@ const GMaps={
 /* ===== GMAPS END ===== */
 /* Los enlaces cortos (maps.app.goo.gl) requieren un servicio propio que siga la redirección.
    Pon aquí su URL: debe responder JSON {url:"<url larga>"} o {place:{name,address,lat,lng,gid,url,meta}} */
-const CONFIG={expandEndpoint:null};
+const CONFIG={expandEndpoint:null,cartoKey:'cb1_4ny2_1_4ef8acba06ee58adc51dbd7e'};
 const Resolver={
  async resolve(raw){const m=raw.match(/https?:\/\/\S+/),text=m?m[0]:raw.trim(),r=GMaps.parse(text);
   if(r)return r;
