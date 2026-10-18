@@ -257,8 +257,8 @@ const GMaps={
 /* Los enlaces cortos (maps.app.goo.gl) requieren un servicio propio que siga la redirección.
    Pon aquí su URL: debe responder JSON {url:"<url larga>"} o {place:{name,address,lat,lng,gid,url,meta}} */
 /* cartoKey: tu API key gratuita de CARTO (carto.com/basemaps/apikey) */
-/* bigLabels: etiquetas del mapa al doble de tamaño (false = tamaño normal) */
-const CONFIG={expandEndpoint:null,cartoKey:'cb1_4ny2_1_4ef8acba06ee58adc51dbd7e',bigLabels:true};
+/* bigLabels: etiquetas al doble de tamaño pero con menos detalle por nivel de zoom (por defecto false = estilo Google Maps) */
+const CONFIG={expandEndpoint:null,cartoKey:'cb1_4ny2_1_4ef8acba06ee58adc51dbd7e',bigLabels:false};
 const Resolver={
  async resolve(raw){const m=raw.match(/https?:\/\/\S+/),text=m?m[0]:raw.trim(),r=GMaps.parse(text);
   if(r)return r;
@@ -486,8 +486,8 @@ const MapView={
   const m=this.map=L.map(this.el,{center:MADRID,zoom:HOME_ZOOM,zoomSnap:.25,minZoom:3,zoomControl:false,attributionControl:false});
   const note=h('div',{class:'mapnote'},CONFIG.cartoKey?'No se cargan los mosaicos del mapa (¿sin conexión?)':'Falta la API key de CARTO (CONFIG.cartoKey)');this.el.append(note);if(!CONFIG.cartoKey)note.style.display='block';
   let bad=0;
-  L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}${CONFIG.bigLabels?'@2x':''}.png`+(CONFIG.cartoKey?'?key='+encodeURIComponent(CONFIG.cartoKey):''),
-   {maxZoom:20,attribution:'&copy; OpenStreetMap contributors &copy; CARTO',...(CONFIG.bigLabels?{tileSize:512,zoomOffset:-1}:{detectRetina:true})})
+  L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png`+(CONFIG.cartoKey?'?key='+encodeURIComponent(CONFIG.cartoKey):''),
+   {maxZoom:20,maxNativeZoom:19,attribution:'&copy; OpenStreetMap contributors &copy; CARTO',...(CONFIG.bigLabels?{tileSize:512,zoomOffset:-1}:{})})
    .on('tileerror',()=>{if(++bad>2)note.style.display='block'}).on('tileload',()=>{bad=0;if(CONFIG.cartoKey)note.style.display='none'}).addTo(m);
   L.control.attribution({prefix:false,position:'bottomleft'}).addTo(m);
   this.layer=L.layerGroup().addTo(m)},
