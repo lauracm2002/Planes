@@ -95,8 +95,8 @@ input,select,textarea{display:block;width:100%;min-width:0;font:inherit;font-siz
 textarea{height:auto;min-height:96px;padding:12px 14px;resize:none}
 select{padding-right:36px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a8a8f' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center/18px}
 input:focus,select:focus,textarea:focus{border-color:var(--pink)}
-input[type=date]{padding:0 10px;font-size:15px;display:flex;align-items:center;line-height:48px}
-input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;min-height:46px;line-height:46px;display:flex;align-items:center}
+input[type=date],input[type=time]{padding:0 10px;font-size:15px;display:flex;align-items:center;line-height:48px}
+input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and-time-value{text-align:left;margin:0;min-height:46px;line-height:46px;display:flex;align-items:center}
 .two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .btn{width:100%;border:0;border-radius:16px;padding:14px;font-weight:700;font-size:16px;margin-top:16px;background:linear-gradient(135deg,#f9b5cf,#e0709a);color:#fff}
 .btn.sec{background:var(--pink-l);color:var(--pink-d);margin-top:8px}
@@ -161,7 +161,24 @@ input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;min-heigh
 .mapnote{position:absolute;z-index:1200;top:10px;left:50%;transform:translateX(-50%);background:#fff;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.15);display:none;white-space:nowrap}
 .pin div{width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:grid;place-items:center;border:2px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.25)}
 .pin span{transform:rotate(45deg);font-size:17px;line-height:1}
-.pin.off div{filter:grayscale(.7);opacity:.75}
+/* Mapa: controles flotantes sobre el mapa */
+.mapui{position:absolute;inset:0;z-index:5;pointer-events:none}
+.mapbar{position:absolute;top:10px;left:0;right:0}
+.mapbar .chips{position:static;display:flex;width:max-content;max-width:100%;padding:4px 14px;background:none;pointer-events:auto}
+.mapbar .chip{border-color:transparent;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.mapbar .chip.on{border-color:var(--pink)}
+.pill{position:absolute;left:18px;bottom:28px;height:44px;padding:0 14px 0 18px;border-radius:999px;border:0;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.2);display:flex;align-items:center;gap:6px;font-weight:700;pointer-events:auto}
+.pill svg{width:18px;height:18px;color:var(--mute)}
+.dd{position:fixed;background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.25);padding:6px;min-width:190px;animation:pop .18s}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.ph h2{margin:0}
+.star{width:36px;height:36px;border-radius:50%;border:0;background:var(--pink-l);color:var(--pink-d);display:grid;place-items:center;flex:none}
+.star svg{width:20px;height:20px}
+.star.on svg{fill:var(--pink-d)}
+.clr{position:relative}
+.clr .cx{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;border:0;background:#d4d4d8;color:#fff;font-size:12px;padding:0;display:none;place-items:center;line-height:1}
+.clr.has .cx{display:grid}
+.clr.has input{padding-right:40px}
 .pchip{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;color:var(--pink-d)}
 .pchip .tx{flex:1;min-width:0;color:var(--ink)}
 .pchip b{display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -187,11 +204,13 @@ input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;min-heigh
 const $=id=>document.getElementById(id);
 const h=(t,a={},...k)=>{const e=document.createElement(t);for(const[n,v]of Object.entries(a||{})){if(n==='class')e.className=v;else if(n==='html')e.innerHTML=v;else if(n.startsWith('on'))e.addEventListener(n.slice(2),v);else if(v!=null&&v!==false)e.setAttribute(n,v===true?'':v)}k.flat(9).forEach(c=>c!=null&&c!==false&&e.append(c.nodeType?c:document.createTextNode(c)));return e};
 const ic=p=>h('span',{html:`<svg viewBox="0 0 24 24">${p}</svg>`,style:'display:inline-flex'});
-const I={list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',cal:'<rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/>',dots:'<circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/>',plus:'<path d="M12 5v14M5 12h14"/>',back:'<path d="M15 18l-6-6 6-6"/>',next:'<path d="M9 18l6-6-6-6"/>',pin:'<path d="M12 22s7-6.2 7-12a7 7 0 10-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>',folder:'<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>',box:'<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v9a2 2 0 002 2h10a2 2 0 002-2V9M10 13h4"/>',flag:'<path d="M5 22V4M5 4h12l-2 4 2 4H5"/>',search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',check:'<path d="M5 12l5 5L20 7"/>',map:'<path d="M9 3L3 5v16l6-2 6 2 6-2V3l-6 2z"/><path d="M9 3v16M15 5v16"/>',locate:'<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',tag:'<path d="M20.6 13.4l-7.2 7.2a2 2 0 01-2.8 0L3 13V3h10l7.6 7.6a2 2 0 010 2.8z"/><circle cx="7.5" cy="7.5" r="1"/>'};
+const I={list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',cal:'<rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/>',dots:'<circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/>',plus:'<path d="M12 5v14M5 12h14"/>',back:'<path d="M15 18l-6-6 6-6"/>',next:'<path d="M9 18l6-6-6-6"/>',pin:'<path d="M12 22s7-6.2 7-12a7 7 0 10-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>',folder:'<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>',box:'<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v9a2 2 0 002 2h10a2 2 0 002-2V9M10 13h4"/>',flag:'<path d="M5 22V4M5 4h12l-2 4 2 4H5"/>',search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',check:'<path d="M5 12l5 5L20 7"/>',up:'<path d="M6 15l6-6 6 6"/>',done:'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>',star:'<path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5-4.8-4.6 6.6-.9z"/>',map:'<path d="M9 3L3 5v16l6-2 6 2 6-2V3l-6 2z"/><path d="M9 3v16M15 5v16"/>',locate:'<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',tag:'<path d="M20.6 13.4l-7.2 7.2a2 2 0 01-2.8 0L3 13V3h10l7.6 7.6a2 2 0 010 2.8z"/><circle cx="7.5" cy="7.5" r="1"/>'};
 const pad=n=>String(n).padStart(2,'0'),iso=(y,m,d)=>`${y}-${pad(m+1)}-${pad(d)}`,isoOf=d=>iso(d.getFullYear(),d.getMonth(),d.getDate());
 const MES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const fmt=s=>{if(!s)return'';const[y,m,d]=s.split('-').map(Number);return`${d} ${MES[m-1].slice(0,3)}${y!==new Date().getFullYear()?' '+y:''}`};
-const fmtRange=p=>!p.start?'':(!p.end||p.end===p.start?fmt(p.start):`${fmt(p.start)} – ${fmt(p.end)}`);
+const fmtRange=p=>{if(!p.start)return'';
+ if(!p.end||p.end===p.start){const t=p.startTime&&p.endTime?`${p.startTime}–${p.endTime}`:p.startTime||(p.endTime?'hasta '+p.endTime:'');return fmt(p.start)+(t?' · '+t:'')}
+ return`${fmt(p.start)}${p.startTime?' '+p.startTime:''} – ${fmt(p.end)}${p.endTime?' '+p.endTime:''}`};
 const uid=()=>crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random());
 const clamp=v=>Math.max(0,Math.min(1,v));
 const tint=(hex,t=.45)=>{const n=parseInt(hex.slice(1),16);return'#'+[16,8,0].map(s=>Math.round(((n>>s)&255)*t+255*(1-t)).toString(16).padStart(2,'0')).join('')};
@@ -224,14 +243,14 @@ class PlaceRepo{
  list(){return this.items}
  get(id){return this.items.find(x=>x.id===id)||null}
  upsert(r){const ex=this.items.find(x=>(r.gid&&x.gid===r.gid)||(Math.abs(x.lat-r.lat)<1e-5&&Math.abs(x.lng-r.lng)<1e-5));
-  if(ex)return ex;const n={id:uid(),name:r.name,address:r.address||'',lat:r.lat,lng:r.lng,gid:r.gid||null,url:r.url||'',meta:r.meta||{}};this.items.push(n);return n}
+  if(ex)return ex;const n={id:uid(),fav:false,name:r.name,address:r.address||'',lat:r.lat,lng:r.lng,gid:r.gid||null,url:r.url||'',meta:r.meta||{}};this.items.push(n);return n}
 }
 const gurl=(la,lo)=>`https://www.google.com/maps/search/?api=1&query=${la},${lo}`;
 const places=new PlaceRepo([
  {id:'lisboa',name:'Lisboa',address:'Portugal',lat:38.7223,lng:-9.1393,gid:null,url:gurl(38.7223,-9.1393),meta:{}},
- {id:'sanmiguel',name:'Mercado de San Miguel',address:'Plaza de San Miguel, Madrid',lat:40.41547,lng:-3.70894,gid:null,url:gurl(40.41547,-3.70894),meta:{}},
+ {id:'sanmiguel',fav:true,name:'Mercado de San Miguel',address:'Plaza de San Miguel, Madrid',lat:40.41547,lng:-3.70894,gid:null,url:gurl(40.41547,-3.70894),meta:{}},
  {id:'guadarrama',name:'Sierra de Guadarrama',address:'Cercedilla, Madrid',lat:40.7447,lng:-4.0554,gid:null,url:gurl(40.7447,-4.0554),meta:{}},
- {id:'retiro',name:'Parque del Retiro',address:'Madrid',lat:40.41526,lng:-3.68450,gid:null,url:gurl(40.41526,-3.6845),meta:{}}]);
+ {id:'retiro',fav:true,name:'Parque del Retiro',address:'Madrid',lat:40.41526,lng:-3.68450,gid:null,url:gurl(40.41526,-3.6845),meta:{}}]);
 const placeOf=id=>places.get(id);
 /* ===== GMAPS START ===== */
 const GMaps={
@@ -268,13 +287,13 @@ const Resolver={
   if(!CONFIG.expandEndpoint){const e=new Error('NO_BACKEND');e.code='NO_BACKEND';throw e}
   const r=await fetch(`${CONFIG.expandEndpoint}?url=${encodeURIComponent(u)}`);if(!r.ok)throw new Error('EXPAND');return r.json()}
 };
-const MADRID=[40.4168,-3.7038],HOME_ZOOM=5.25,MADRID_REGION=[[39.88,-4.58],[41.17,-3.05]];
+const MADRID=[40.4168,-3.7038],HOME_ZOOM=10.5,MADRID_REGION=[[40.27,-3.71],[40.62,-3.71]]; /* de Fuenlabrada/Getafe a Tres Cantos */
 let mapChipsX=0;
 
 const T=new Date(),Y=T.getFullYear(),M=T.getMonth();
 const repo=new PlanRepo([
  {id:'1',title:'Escapada a Lisboa',cat:'viajes',start:iso(Y,M,18),end:iso(Y,M,21),limit:iso(Y,M,10),placeId:'lisboa',desc:'Reservar vuelos y hotel cerca de Alfama.',photos:[],done:false},
- {id:'2',title:'Cena en el nuevo japonés',cat:'comida',start:iso(Y,M,9),end:iso(Y,M,9),placeId:'sanmiguel',desc:'',photos:[],done:false},
+ {id:'2',title:'Cena en el nuevo japonés',cat:'comida',start:iso(Y,M,9),end:iso(Y,M,9),placeId:'sanmiguel',startTime:'21:00',endTime:'23:00',desc:'',photos:[],done:false},
  {id:'3',title:'Ruta al amanecer',cat:'naturaleza',start:iso(Y,M,24),end:iso(Y,M,25),placeId:'guadarrama',desc:'',photos:[],done:false},
  {id:'4',title:'Maratón de cine',cat:'ocio',start:iso(Y,M,8),end:iso(Y,M,10),placeId:null,desc:'',photos:[],done:false},
  {id:'5',title:'Brunch dominguero',cat:'comida',start:'',end:'',placeId:null,desc:'',photos:[],done:false},
@@ -283,7 +302,7 @@ const repo=new PlanRepo([
 
 /* ========== Estado (patrón Observer) ========== */
 class Store{constructor(s){this.s=s;this.subs=new Set}set(p){Object.assign(this.s,p);this.subs.forEach(f=>f(this.s))}sub(f){this.subs.add(f);return this}}
-const store=new Store({tab:'plans',sub:null,view:Prefs.get('view','list'),archive:false,cat:CATS[0].id,folder:null,month:{y:Y,m:M},dir:'',q:'',mapCat:'all'});
+const store=new Store({tab:'plans',sub:null,view:Prefs.get('view','list'),completed:false,cat:CATS[0].id,folder:null,month:{y:Y,m:M},dir:'',q:'',mapCat:'all',mapStatus:'pend'});
 const S=store.s,setS=p=>store.set(p);
 
 /* ========== Overlays ========== */
@@ -327,14 +346,14 @@ function openViewer(photos,start=0){
 }
 
 /* ========== Componentes ========== */
-const visible=()=>repo.list().filter(p=>p.done===S.archive).sort((a,b)=>(a.start||'9')<(b.start||'9')?-1:1);
-const Meta=(p,withCat)=>h('div',{class:'meta'},
+const visible=()=>repo.list().filter(p=>p.done===S.completed).sort((a,b)=>(a.start||'9')<(b.start||'9')?-1:1);
+const Meta=(p,withCat,hidePlace)=>h('div',{class:'meta'},
  withCat&&h('span',{},ic(I.folder),catOf(p.cat).n),
  p.start&&h('span',{},ic(I.cal),fmtRange(p)),
- placeOf(p.placeId)&&h('span',{},ic(I.pin),placeOf(p.placeId).name),
+ !hidePlace&&placeOf(p.placeId)&&h('span',{},ic(I.pin),placeOf(p.placeId).name),
  p.limit&&!p.done&&h('span',{class:'warn'},ic(I.flag),fmt(p.limit)));
-function PlanCard(p,i,big){
- const el=h('div',{class:'plan big',onclick:()=>openDetail(p)},h('div',{class:'tx'},h('b',{},p.title),Meta(p)));
+function PlanCard(p,i,big,hidePlace){
+ const el=h('div',{class:'plan big',onclick:()=>openDetail(p)},h('div',{class:'tx'},h('b',{},p.title),Meta(p,false,hidePlace)));
  el.style.animationDelay=Math.min(i*30,300)+'ms';return el;
 }
 const Empty=m=>h('div',{class:'empty'},h('div',{},'🌸'),h('p',{},m));
@@ -398,24 +417,32 @@ function openDetail(p){
   h('button',{class:'btn sec',onclick:()=>confirmDlg('¿Eliminar este plan? Esta acción no se puede deshacer.','Eliminar',()=>mutate(()=>repo.remove(p.id)))},'Eliminar')));
 }
 /* Formulario de plan */
+/* Campo con botón ✕ para dejarlo vacío (fechas y horas opcionales) */
+function Clearable(inp){
+ const w=h('div',{class:'clr'},inp,h('button',{class:'cx',type:'button','aria-label':'Quitar',onclick:()=>{inp.value='';sync();inp.dispatchEvent(new Event('change',{bubbles:true}))}},'✕'));
+ const sync=inp._sync=()=>w.classList.toggle('has',!!inp.value);
+ inp.addEventListener('input',sync);inp.addEventListener('change',sync);sync();return w;
+}
 function openForm(p,date=''){
  const f={title:h('input',{value:p?.title||''}),
   cat:h('select',{},CATS.map(c=>h('option',{value:c.id,selected:(p?.cat||S.folder||S.cat)===c.id},c.e+' '+c.n))),
   start:h('input',{type:'date',value:p?.start||date}),end:h('input',{type:'date',value:p?.end||p?.start||date,min:p?.start||date||null}),
-  limit:h('input',{type:'date',value:p?.limit||''}),desc:h('textarea',{})};
+  limit:h('input',{type:'date',value:p?.limit||''}),startTime:h('input',{type:'time',value:p?.startTime||''}),endTime:h('input',{type:'time',value:p?.endTime||''}),desc:h('textarea',{})};
  f.desc.value=p?.desc||'';
  const pick=PlacePicker(p?.placeId);
- f.start.addEventListener('change',()=>{if(!f.end.value||f.end.value<f.start.value)f.end.value=f.start.value;f.end.min=f.start.value});
+ f.start.addEventListener('change',()=>{const v=f.start.value;if(v&&(!f.end.value||f.end.value<v))f.end.value=v;f.end.min=v;f.end._sync()});
  const ph=[...(p?.photos||[])],box=h('div',{class:'thumbs'});
  const drawPh=()=>box.replaceChildren(...ph.map((src,i)=>h('div',{class:'th'},h('img',{src}),h('button',{'aria-label':'Quitar',onclick:()=>{ph.splice(i,1);drawPh()}},'✕'))));
  const file=h('input',{type:'file',accept:'image/*',multiple:true,style:'display:none',onchange:async e=>{for(const fl of e.target.files){const d=await readPhoto(fl);d&&ph.push(d)}e.target.value='';drawPh()}});
  drawPh();
  const save=()=>{const title=f.title.value.trim();if(!title){f.title.style.borderColor='#e0709a';f.title.focus();return}
   let start=f.start.value,end=f.end.value;if(!start)end='';else if(!end||end<start)end=start;
-  const data={title,cat:f.cat.value,start,end,limit:f.limit.value,placeId:pick.value(),desc:f.desc.value.trim(),photos:ph};
+  const data={title,cat:f.cat.value,start,end,startTime:start?f.startTime.value:'',endTime:start?f.endTime.value:'',limit:f.limit.value,placeId:pick.value(),desc:f.desc.value.trim(),photos:ph};
   mutate(()=>p?repo.update(p.id,data):repo.add(data))};
  Overlay.open(Sheet(h('h2',{},p?'Editar plan':'Nuevo plan'),Fld('Título',f.title),Fld('Categoría',f.cat),
-  h('div',{class:'two'},Fld('Inicio',f.start),Fld('Fin',f.end)),h('div',{class:'two'},Fld('Fecha límite',f.limit)),
+  h('div',{class:'two'},Fld('Inicio',Clearable(f.start)),Fld('Fin',Clearable(f.end))),
+  h('div',{class:'two'},Fld('Hora inicio',Clearable(f.startTime)),Fld('Hora fin',Clearable(f.endTime))),
+  h('div',{class:'two'},Fld('Fecha límite',Clearable(f.limit))),
   Fld('Localización',pick.el),Fld('Descripción',f.desc),
   Fld('Fotos',h('div',{},h('button',{class:'btn sec',style:'margin-top:0',onclick:()=>file.click()},'Añadir fotos'),file,box)),
   h('button',{class:'btn',onclick:save},'Guardar')));
@@ -456,7 +483,7 @@ function openCatForm(c){
 function PlacePicker(initial){
  let id=initial||null,seq=0;
  const el=h('div'),msg=h('div',{class:'pmsg'});
- const urlIn=h('input',{placeholder:'Pega el enlace de Google Maps',inputmode:'url',autocapitalize:'off',autocorrect:'off',spellcheck:'false'});
+ const urlIn=h('input',{placeholder:'Enlace Google Maps',inputmode:'url',autocapitalize:'off',autocorrect:'off',spellcheck:'false'});
  const setMsg=(t,err)=>{msg.textContent=t;msg.className='pmsg'+(err?' err':'')};
  async function attempt(){
   const v=urlIn.value.trim();
@@ -472,16 +499,26 @@ function PlacePicker(initial){
   const pl=places.get(id);
   if(pl){el.replaceChildren(h('div',{class:'pchip'},ic(I.pin),h('div',{class:'tx'},h('b',{},pl.name),h('small',{},pl.address||`${pl.lat.toFixed(5)}, ${pl.lng.toFixed(5)}`)),
    h('button',{class:'x','aria-label':'Quitar lugar',onclick:()=>{id=null;urlIn.value='';setMsg('');draw()}},'✕')));return}
-  const saved=places.list();
+  const saved=places.list().filter(x=>x.fav);
   el.replaceChildren(...[urlIn,msg,saved.length&&h('select',{style:'margin-top:8px',onchange:e=>{if(e.target.value){id=e.target.value;draw()}}},
-   h('option',{value:''},'O elige un lugar guardado'),saved.map(x=>h('option',{value:x.id},x.name)))].filter(Boolean));
+   h('option',{value:''},'Favoritos'),saved.map(x=>h('option',{value:x.id},x.name)))].filter(Boolean));
  }
  draw();return{el,value:()=>id};
 }
 /* Mapa (Leaflet + CARTO Positron) */
-const pinIcon=(c,off)=>L.divIcon({className:'pin'+(off?' off':''),html:`<div style="background:${c.b}"><span>${c.e}</span></div>`,iconSize:[36,36],iconAnchor:[18,43]});
+const STATUS={pend:'Pendientes',done:'Completados',all:'Todos'};
+const byDateDesc=(a,b)=>((b.start||'')+' '+(b.startTime||'')).localeCompare((a.start||'')+' '+(a.startTime||''));
+/* Pendientes primero y completados después; en cada grupo, la fecha más lejana arriba */
+const sortPlans=ps=>[...ps.filter(p=>!p.done).sort(byDateDesc),...ps.filter(p=>p.done).sort(byDateDesc)];
+function openStatusMenu(pill){
+ const r=pill.getBoundingClientRect();
+ Overlay.open(h('div',{class:'dd',style:`left:${r.left}px;bottom:${innerHeight-r.top+8}px`},Object.entries(STATUS).map(([k,v])=>
+  h('button',{class:'mi',onclick:()=>{Overlay.close();setS({mapStatus:k})}},v,S.mapStatus===k&&h('span',{class:'t'},ic(I.check))))),'pop');
+ closeOnScroll();
+}
+const pinIcon=(c,gray)=>L.divIcon({className:'pin',html:`<div style="background:${gray?'#cfcfd4':c.b}"><span>${c.e}</span></div>`,iconSize:[36,36],iconAnchor:[18,43]});
 const MapView={
- el:h('div',{id:'map'}),map:null,layer:null,focus:null,
+ el:h('div',{id:'map'}),ui:h('div',{class:'mapui'}),homed:false,map:null,layer:null,focus:null,
  init(){if(this.map)return;
   const m=this.map=L.map(this.el,{center:MADRID,zoom:HOME_ZOOM,zoomSnap:.25,minZoom:3,zoomControl:false,attributionControl:false});
   const note=h('div',{class:'mapnote'},CONFIG.cartoKey?'No se cargan los mosaicos del mapa (¿sin conexión?)':'Falta la API key de CARTO (CONFIG.cartoKey)');this.el.append(note);if(!CONFIG.cartoKey)note.style.display='block';
@@ -495,22 +532,34 @@ const MapView={
   if(!window.L){this.el.replaceChildren(Empty('No se pudo cargar el mapa. Comprueba tu conexión.'));
    if(!this.tried){this.tried=true;const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';sc.onload=()=>{S.tab==='map'&&renderScreen()};document.head.append(sc)}
    return}
-  this.init();this.sync();
-  requestAnimationFrame(()=>{this.map.invalidateSize();if(this.focus){const f=this.focus;this.focus=null;this.map.setView([f.lat,f.lng],16)}})},
- home(){this.map&&this.map.fitBounds(MADRID_REGION,{padding:[8,8]})},
+  this.init();this.drawUI();this.sync();
+  requestAnimationFrame(()=>{this.map.invalidateSize();
+   if(this.focus){const f=this.focus;this.focus=null;this.homed=true;this.map.setView([f.lat,f.lng],16)}
+   else if(!this.homed){this.homed=true;this.home(false)}})},
+ drawUI(){
+  const chips=h('div',{class:'chips'},[{id:'all',n:'Todos'},...CATS].map(c=>h('button',{class:'chip'+(c.id===S.mapCat?' on':''),onclick:()=>setS({mapCat:c.id})},c.e,c.n)));
+  chips.addEventListener('scroll',()=>{mapChipsX=chips.scrollLeft});
+  const pill=h('button',{class:'pill',onclick:()=>openStatusMenu(pill)},STATUS[S.mapStatus],ic(I.up));
+  this.ui.replaceChildren(h('div',{class:'mapbar'},chips),pill);chips.scrollLeft=mapChipsX},
+ home(animate=true){this.map&&this.map.fitBounds(MADRID_REGION,{paddingTopLeft:[0,58],paddingBottomRight:[0,72],animate})},
  sync(){this.layer.clearLayers();const by=new Map();
-  repo.list().forEach(p=>{if(S.mapCat!=='all'&&p.cat!==S.mapCat)return;const pl=placeOf(p.placeId);if(!pl)return;if(!by.has(pl.id))by.set(pl.id,{pl,ps:[]});by.get(pl.id).ps.push(p)});
-  by.forEach(({pl,ps})=>{const pend=ps.filter(p=>!p.done);
-   L.marker([pl.lat,pl.lng],{icon:pinIcon(catOf((pend[0]||ps[0]).cat),!pend.length)}).on('click',()=>openPlaceSheet(pl,ps)).addTo(this.layer)})}
+  repo.list().forEach(p=>{if(S.mapCat!=='all'&&p.cat!==S.mapCat)return;if((S.mapStatus==='pend'&&p.done)||(S.mapStatus==='done'&&!p.done))return;
+   const pl=placeOf(p.placeId);if(!pl)return;if(!by.has(pl.id))by.set(pl.id,{pl,ps:[]});by.get(pl.id).ps.push(p)});
+  by.forEach(({pl,ps})=>{const list=sortPlans(ps),gray=S.mapStatus==='all'&&!ps.some(p=>!p.done);
+   L.marker([pl.lat,pl.lng],{icon:pinIcon(catOf(list[0].cat),gray)}).on('click',()=>openPlaceSheet(pl,list)).addTo(this.layer)})}
 };
 function focusPlace(pl){Overlay.close();MapView.focus=pl;setS({tab:'map',sub:null})}
 function openPlaceSheet(pl,ps){
- Overlay.open(Sheet(h('h2',{},pl.name),
+ const star=h('button',{class:'star'+(pl.fav?' on':''),'aria-label':'Favorito',onclick:()=>{pl.fav=!pl.fav;star.classList.toggle('on',pl.fav)}},ic(I.star));
+ Overlay.open(Sheet(h('div',{class:'ph'},h('h2',{},pl.name),star),
   pl.address&&h('div',{class:'meta',style:'font-size:14px'},h('span',{},ic(I.pin),pl.address)),
   h('div',{class:'meta'},h('span',{},`${pl.lat.toFixed(5)}, ${pl.lng.toFixed(5)}`)),
-  h('div',{class:'list',style:'padding:14px 0 0'},ps.map((p,i)=>PlanCard(p,i))),
+  h('div',{class:'list',style:'padding:14px 0 0'},sortPlans(ps).map((p,i)=>PlanCard(p,i,false,true))),
   pl.url&&h('a',{class:'btn sec',href:pl.url,target:'_blank',rel:'noopener',style:'display:block;text-align:center;text-decoration:none'},'Abrir en Google Maps')));
 }
+
+/* Los menús flotantes se cierran al hacer scroll */
+const closeOnScroll=()=>['touchmove','wheel'].forEach(ev=>Overlay.el?.addEventListener(ev,()=>Overlay.close(),{passive:true}));
 
 /* Menú de ajustes */
 function openMenu(){
@@ -518,8 +567,9 @@ function openMenu(){
  Overlay.open(h('div',{class:'menu'},
   item(I.list,'Vista de lista',()=>{Prefs.set('view','list');setS({view:'list',folder:null})},S.view==='list'),
   item(I.folder,'Vista de carpetas',()=>{Prefs.set('view','folders');setS({view:'folders',folder:null})},S.view==='folders'),
-  item(I.box,'Ver archivados',()=>setS({archive:!S.archive,folder:null}),S.archive),
+  item(I.done,'Completados',()=>setS({completed:!S.completed,folder:null}),S.completed),
   item(I.tag,'Categorías',()=>setS({sub:'cats',folder:null}))),'pop');
+ closeOnScroll();
 }
 
 /* ========== Shell ========== */
@@ -530,15 +580,14 @@ function syncSearch(){S.q=searchIn.value;clearBtn.style.display=S.q?'grid':'none
 const searchEl=h('div',{class:'search'},ic(I.search),searchIn,clearBtn);
 function renderTop(){
  const top=$('top');top.replaceChildren();
+ top.style.display=S.tab==='map'?'none':'';
+ if(S.tab==='map')return;
  if(S.tab==='cal'){
   top.style.justifyContent='space-between';
   top.append(h('button',{class:'ib',onclick:()=>goMonth(-1),'aria-label':'Mes anterior'},ic(I.back)),
    h('button',{style:'border:0;background:none;font-size:22px;font-weight:800;padding:8px',onclick:openPicker},h('span',{class:'cap'},`${MES[S.month.m]} ${S.month.y}`)),
    h('button',{class:'ib',onclick:()=>goMonth(1),'aria-label':'Mes siguiente'},ic(I.next)));return}
  top.style.justifyContent='';
- if(S.tab==='map'){
-  const chips=h('div',{class:'chips'},[{id:'all',n:'Todos'},...CATS].map(c=>h('button',{class:'chip'+(c.id===S.mapCat?' on':''),onclick:()=>setS({mapCat:c.id})},c.e,c.n)));
-  chips.addEventListener('scroll',()=>{mapChipsX=chips.scrollLeft});top.append(chips);chips.scrollLeft=mapChipsX;return}
  if(S.sub==='cats'){top.append(h('button',{class:'ib',onclick:()=>setS({sub:null}),'aria-label':'Volver'},ic(I.back)),h('h1',{},'Categorías'));return}
  const inFolder=S.view==='folders'&&S.folder&&!S.q.trim();
  top.append(...[inFolder&&h('button',{class:'back',onclick:()=>setS({folder:null})},ic(I.back),catOf(S.folder).n),searchEl,
@@ -547,7 +596,7 @@ function renderTop(){
 function renderScreen(){
  const sc=$('screen'),y=sc.scrollTop;
  sc.style.overflow=S.tab==='map'?'hidden':'';
- if(S.tab==='map'){sc.replaceChildren(MapView.el);MapView.show();return}
+ if(S.tab==='map'){sc.replaceChildren(MapView.el,MapView.ui);MapView.show();return}
  sc.replaceChildren(S.tab==='cal'?Calendar():S.sub==='cats'?CatsScreen():S.q.trim()?Results():S.view==='folders'?FolderView():ListView());
  sc.scrollTop=S.tab==='plans'?y:0;
 }
